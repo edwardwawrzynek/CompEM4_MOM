@@ -3,6 +3,8 @@ classdef MOMProblem
         k0 % wavenumber of free space
         nodes % 2xn matrix of node locations on cylinder
         Z % system matrix (nxn)
+        V % incidence vector (nx1)
+        I % solution vector (nx1)
     end
 
     methods
@@ -26,7 +28,7 @@ classdef MOMProblem
             
             % get locations of endpoint nodes
             x0 = obj.nodes(:,n);
-            x1 = obj.nodes(:,mod(n+1, Nbasis));
+            x1 = obj.nodes(:,mod(n, Nbasis)+1);
 
             midpt = 0.5 * (x0 + x1);
             Ln = norm(x0 - x1);
@@ -35,13 +37,36 @@ classdef MOMProblem
             n = [tangent(2); -tangent(1)] / Ln;
         end
 
+        function plotMesh(obj)
+        % PLOTMESH Plots the mesh segments for a MOMProblem object.
+        % obj.plotMesh()
+        %
+        % INPUTS
+        % obj       the MOMProblem object for which the mesh segments are 
+        %           plotted
+        %
+        % OUTPUTS
+        % 
+            
+            % close the distance between the first and last node
+            segments = [obj.nodes, obj.nodes(:,1)];
+            
+            hold on;
+            plot(segments(1,:), segments(2,:), 'b-', 'LineWidth', 1.5); % plot segments
+            plot(obj.nodes(1,:), obj.nodes(2,:), 'ro', 'MarkerFaceColor', 'r'); % plot nodes
+
+        end
+
         % create the system matrix for EFIE TMz scattering from a PEC cylinder
         % using pulse basis functions and collocation
         function obj = tmz_pec_sys_matrix(obj)
+
             % number of basis functions
             Nbasis = size(obj.nodes, 2);
+
             % impedance of space
             eta = 376.730;
+
             % Euler–Mascheroni constant
             gamma = -psi(1);
             e = exp(1);
@@ -83,6 +108,25 @@ classdef MOMProblem
                     end
                 end
             end
+        end
+
+        function obj = constructIncidence(obj, phi_inc, E0)
+
+            k_inc = obj.k0 * [cos(phi_inc); sin(phi_inc)]; % k vector
+
+            obj.V = zeros(size(obj.nodes, 2), 1); % initialize
+            for m = 1:size(obj.nodes,2) % for each node
+                rho_m = obj.pulse_basis_func(m); % location vector
+                obj.V(m) = E0 * exp(-1i * dot(k_inc, rho_m)); % incident E-field
+            end
+
+        end
+
+        function obj = solveI(obj)
+
+            obj = obj.tmz_pec_sys_matrix();
+            obj.I = obj.Z \ obj.V;
+
         end
     end
 end

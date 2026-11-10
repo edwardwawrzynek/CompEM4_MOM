@@ -20,29 +20,59 @@ classdef MOMProblem
             obj.Z = zeros(npts);
         end
 
-        % return the midpoint and length of the n-th pulse basis function
-        function [midpt, Ln] = pulse_basis_func(obj, n)
+        % return the midpoint, length, and normal vector of the n-th pulse basis function
+        function [midpt, Ln, n] = pulse_basis_func(obj, n)
             Nbasis = size(obj.nodes, 2);
+            
+            % get locations of endpoint nodes
+            x0 = obj.nodes(:,n);
+            x1 = obj.nodes(:,mod(n+1, Nbasis));
 
-            midpt = 0.5 * (obj.nodes(:,n) + obj.nodes(:,mod(n+1, Nbasis)));
-            Ln = norm(obj.nodes(:,n) - obj.nodes(:,mod(n+1, Nbasis)));
+            midpt = 0.5 * (x0 + x1);
+            Ln = norm(x0 - x1);
+            % outward unit normal for the circular boundary segment
+            tangent = x1 - x0;
+            n = [tangent(2); -tangent(1)] / Ln;
+        end
+
+        function plotMesh(obj)
+        % PLOTMESH Plots the mesh segments for a MOMProblem object.
+        % obj.plotMesh()
+        %
+        % INPUTS
+        % obj       the MOMProblem object for which the mesh segments are 
+        %           plotted
+        %
+        % OUTPUTS
+        % 
+            
+            % close the distance between the first and last node
+            segments = [obj.nodes, obj.nodes(:,1)];
+            
+            hold on;
+            plot(segments(1,:), segments(2,:), 'b-', 'LineWidth', 1.5); % plot segments
+            plot(obj.nodes(1,:), obj.nodes(2,:), 'ro', 'MarkerFaceColor', 'r'); % plot nodes
+
         end
 
         % create the system matrix for EFIE TMz scattering from a PEC cylinder
         % using pulse basis functions and collocation
         function obj = tmz_pec_sys_matrix(obj)
+
             % number of basis functions
             Nbasis = size(obj.nodes, 2);
+
             % impedance of space
             eta = 376.730;
+
             % Euler–Mascheroni constant
             gamma = -psi(1);
             e = exp(1);
 
             for n = 1:numel(Nbasis)
-                [rho_n, Ln] = obj.pulse_basis_func(n);
+                [rho_n, Ln, nn] = obj.pulse_basis_func(n);
                 for m = 1:numel(Nbasis)
-                    [rho_m, Lm] = obj.pulse_basis_func(m);
+                    [rho_m, Lm, nm] = obj.pulse_basis_func(m);
 
                     if n == m
                         % handle self interaction through Hankel function at
@@ -61,26 +91,34 @@ classdef MOMProblem
         function obj = tez_pec_sys_matrix(obj)
             % number of basis functions
             Nbasis = size(obj.nodes, 2);
-            % impedance of space
-            eta = 376.730;
-            % Euler–Mascheroni constant
-            gamma = -psi(1);
-            e = exp(1);
 
             for n = 1:numel(Nbasis)
-                [rho_n, Ln] = obj.pulse_basis_func(n);
+                [rho_n, Ln, nn] = obj.pulse_basis_func(n);
                 for m = 1:numel(Nbasis)
-                    [rho_m, Lm] = obj.pulse_basis_func(m);
+                    [rho_m, Lm, nm] = obj.pulse_basis_func(m);
 
                     if n == m
                         % self interaction from MFIE
                         obj.Z(m,n) = -1/2;
                     else
                         % approximate integral with midpoint rule elsewhere
-                        obj.Z(m,n) = obj.k0 * Ln / 4j * besselh(1,2,obj.k0*norm(rho_m-rho_n))*TODO/norm(rho_m-rho_n); 
+                        obj.Z(m,n) = obj.k0 * Ln / 4j * besselh(1,2,obj.k0*norm(rho_m-rho_n)) * dot(nn, rho_m-rho_n) / norm(rho_m-rho_n); 
                     end
                 end
             end
         end
-    end
+
+        function obj = constructIncidence(obj, phi_inc, E0)
+
+            k_inc = obj.k0 * [cos(phi_inc), sin(phi_inc)]; % k vector
+
+            obj.V = zeros(size(obj.nodes, 2), 1); % initialize
+            for m = 1:size(obj.nodes)
+                rho_m = obj.pulse_basis_func(m); % location vector
+                V(m) = E0 * exp(-1i * dot(k_inc, rho_m); % incident E-field
+            end
+
+            % apply the incident field
+            obj.V = V;
+        end
 end
