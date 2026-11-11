@@ -3,6 +3,11 @@ classdef MOMProblem
         k0 % wavenumber of free space
         nodes % 2xn matrix of node locations on cylinder
         Z % system matrix (nxn)
+        V % incidence vector (nx1)
+        I % solution vector (nx1)
+        F0 % excitation magnitude 
+        phi_inc % angle of excitation [rad]
+
     end
 
     methods
@@ -26,7 +31,7 @@ classdef MOMProblem
             
             % get locations of endpoint nodes
             x0 = obj.nodes(:,n);
-            x1 = obj.nodes(:,mod(n+1, Nbasis));
+            x1 = obj.nodes(:,mod(n, Nbasis)+1);
 
             midpt = 0.5 * (x0 + x1);
             Ln = norm(x0 - x1);
@@ -66,12 +71,12 @@ classdef MOMProblem
             eta = 376.730;
 
             % Euler–Mascheroni constant
-            gamma = -psi(1);
+            gamma = exp(-psi(1));
             e = exp(1);
 
-            for n = 1:numel(Nbasis)
+            for n = 1:Nbasis
                 [rho_n, Ln, nn] = obj.pulse_basis_func(n);
-                for m = 1:numel(Nbasis)
+                for m = 1:Nbasis
                     [rho_m, Lm, nm] = obj.pulse_basis_func(m);
 
                     if n == m
@@ -92,9 +97,9 @@ classdef MOMProblem
             % number of basis functions
             Nbasis = size(obj.nodes, 2);
 
-            for n = 1:numel(Nbasis)
+            for n = 1:Nbasis
                 [rho_n, Ln, nn] = obj.pulse_basis_func(n);
-                for m = 1:numel(Nbasis)
+                for m = 1:Nbasis
                     [rho_m, Lm, nm] = obj.pulse_basis_func(m);
 
                     if n == m
@@ -108,17 +113,110 @@ classdef MOMProblem
             end
         end
 
-        function obj = constructIncidence(obj, phi_inc, E0)
+        function obj = constructIncidence(obj, phi_inc, F0)
+        % CONSTRUCTINCIDENCE constructs the RHS of the MoM matrix using
+        % information about the incident field.
+        % obj.constructIncidence(phi_inc, F0)
+        %
+        % INPUTS
+        % phi_inc   the angle of incidence as measured from +x in radians
+        % F0        the magnitude of the incident field
+        %
+        % OUTPUTS
+        % obj       the object with updated properties related to
+        %           excitation and V, the RHS of the MoM matrix problem
 
-            k_inc = obj.k0 * [cos(phi_inc), sin(phi_inc)]; % k vector
+            % save excitation parameters
+            obj.phi_inc = phi_inc; 
+            obj.F0 = F0;
+
+            % k vector
+            k_inc = obj.k0 * [cos(phi_inc); sin(phi_inc)];
 
             obj.V = zeros(size(obj.nodes, 2), 1); % initialize
-            for m = 1:size(obj.nodes)
+            for m = 1:size(obj.nodes,2) % for each node
                 rho_m = obj.pulse_basis_func(m); % location vector
-                V(m) = E0 * exp(-1i * dot(k_inc, rho_m); % incident E-field
+                obj.V(m) = F0 * exp(-1i * dot(k_inc, rho_m)); % incident E-field
             end
 
-            % apply the incident field
-            obj.V = V;
         end
+
+        function obj = solveI(obj)
+        % SOLVEI Solves for the currents on the mesh elements pertaining to
+        % the MoM object obj.
+        % obj.solveI( )
+        %
+        % INPUTS
+        %
+        % OUTPUTS
+        % obj       the object with an updated solution vector for the
+        %           currents I.
+            obj.I = obj.Z \ obj.V;
+        end
+
+        function [Finc, Fscat, Ftot] = evaluatePECFields(obj, X, Y, pol)
+        % EVALUATEPECFIELDS Solves for fields as a result of the surface
+        % currents in I for both TMz and TEz cases.
+        % [Finc, Fscat, Ftot] = obj.evaluatePECFields(X,Y,pol)
+        %
+        % INPUTS
+        % X         the x-coordinate of points for which the field is
+        %           evaluated
+        % Y         the y-coordinate of points for which the field is
+        %           evaluated
+        % pol       a value of 1 if TMz polarization, a value of 2 if T
+        %
+        % OUTPUTS
+        % obj       the object with an updated solution vector for the
+        %           currents I.
+
+            % pol = 1 corresponds to TMz
+            % pol = 2 corresponds to TEz
+            if pol ~= 1 && pol ~= 2
+                error("Invalid case: set pol = 1 for TMz polarization or pol = 2 for TEz polarization");
+            end
+
+            % initialize
+            Fscat = zeros(numel(Y), numel(X));
+            Finc = zeros(numel(Y), numel(X));
+            Ftot = zeros(numel(Y), numel(X));
+
+            % free space impedance
+            eta = 376.730;
+
+            % for each field point
+            for ix = 1:numel(X)
+                for iy = 1:numel(Y)
+                    fieldPoint = [X(ix); Y(iy)]; % calculate target location
+
+                    for n = 1:size(obj.nodes, 2)
+
+                        [sourcePoint, Ln, nn] = obj.pulse_basis_func(n); % source info
+                        r = fieldPoint - sourcePoint; % distance
+                        distance = norm(r); % magnitude of distance
+
+                        if distance > 0
+                            if pol == 1
+                                % construct the contribution from each node
+                                Fscat(iy, ix) = Fscat(iy, ix) - ...
+                                    obj.k0 * eta * Ln / 4 * obj.I(n) * besselh(0, 2, obj.k0 * distance);
+                            else
+                                % construct the contribution from each node
+                                Fscat(iy, ix) = Fscat(iy, ix) - obj.k0 * Ln / 4j * obj.I(n) * ...
+                                    besselh(1, 2, obj.k0 * distance) * dot(nn, r) / distance;
+                            end
+                        end
+                    end
+
+                    % analytical incident field
+                    Finc(iy, ix) = obj.F0 * exp(-1j * obj.k0 * ...
+                        (X(ix)*cos(obj.phi_inc) + Y(iy)*sin(obj.phi_inc)));
+
+                    % total field
+                    Ftot(iy, ix) = Finc(iy, ix) + Fscat(iy, ix);
+                end
+            end
+        end
+
+    end
 end

@@ -16,27 +16,73 @@ a = a.makeCircle(geo_a, 100);
 
 % boundary condition is not needed for the solution domain (yay!)
 
-% assign an incidence
+% assign incidence
 a = a.constructIncidence(0, 1);
+
+% assemble LHS
+a = a.tmz_pec_sys_matrix();
 
 % solve the method-of-moments system
 a = a.solveI();
 
-% plot the mesh
-figure();
-a.plotMesh();
+% construct the field
+Xpoints = linspace(-2.5*geo_a, 2.5*geo_a, 50);
+Ypoints = linspace(-2.5*geo_a, 2.5*geo_a, 50);
+[Einc, Escat, Etot] = a.evaluatePECFields(Xpoints, Ypoints, 1);
+
+% % plot the mesh
+% figure();
+% a.plotMesh();
+% set(gcf, 'Color', 'w');
+% set(gca, 'FontName', 'times', 'FontSize', 18, 'TickLength', [0,0])
+% box on; grid on;
+% axis equal tight;
+% title("Mesh")
+% xlabel("x [m]")
+% ylabel("y [m]")
+
+% plot the field
+fig = figure('Color','White', 'Units','normalized', 'Position', [0.02 0.04 0.96 0.5]);
+t = tiledlayout(fig, 1, 3, 'TileSpacing','compact', 'Padding','compact');
+
+nexttile; hold on;
+imagesc(Xpoints, Ypoints, real(Einc));
+theta = linspace(0, 2*pi, 100);
+plot(geo_a*cos(theta), geo_a*sin(theta), 'k', 'LineWidth', 1.5);
 set(gcf, 'Color', 'w');
-set(gca, 'FontName', 'times', 'FontSize', 18, 'TickLength', [0,0])
-box on; grid on;
+set(gca, 'YDir', 'normal', 'FontName', 'times', 'FontSize', 18);
+colormap inferno;
+colorbar;
+clim([-2,2]);
 axis equal tight;
-title("Mesh")
+title("Incident Field [V/m]");
 xlabel("x [m]")
 ylabel("y [m]")
 
-% plot the current
-figure();
-
+nexttile; hold on;
+imagesc(Xpoints, Ypoints, real(Escat));
+theta = linspace(0, 2*pi, 100);
+plot(geo_a*cos(theta), geo_a*sin(theta), 'k', 'LineWidth', 1.5);
 set(gcf, 'Color', 'w');
-set(gca, 'FontName', 'times', 'FontSize', 18);
+set(gca, 'YDir', 'normal', 'FontName', 'times', 'FontSize', 18);
+colormap inferno;
+colorbar;
+clim([-2,2]);
 axis equal tight;
-title("Surface Current");
+title("Scattered Field [V/m]");
+xlabel("x [m]")
+ylabel("y [m]")
+
+nexttile; hold on;
+imagesc(Xpoints, Ypoints, real(Etot));
+theta = linspace(0, 2*pi, 100);
+plot(geo_a*cos(theta), geo_a*sin(theta), 'k', 'LineWidth', 1.5);
+set(gcf, 'Color', 'w');
+set(gca, 'YDir', 'normal', 'FontName', 'times', 'FontSize', 18);
+colormap inferno;
+colorbar;
+clim([-2,2]);
+axis equal tight;
+title("Total Field [V/m]");
+xlabel("x [m]")
+ylabel("y [m]")
