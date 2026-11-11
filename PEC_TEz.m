@@ -27,8 +27,8 @@ a = a.solveI();
 
 % construct the field
 step_num = 100;
-Xpoints = linspace(-2.5*geo_a, 2.5*geo_a, step_num);
-Ypoints = linspace(-2.5*geo_a, 2.5*geo_a, step_num);
+Xpoints = linspace(-5*geo_a, 5*geo_a, step_num);
+Ypoints = linspace(-5*geo_a, 5*geo_a, step_num);
 [Hinc, Hscat, Htot] = a.evaluatePECFields(Xpoints, Ypoints, 2);
 
 % % plot the mesh

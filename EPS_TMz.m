@@ -9,7 +9,7 @@ k = 2*pi/lambda;
 geo_a = 1.5 * 1e-2;
 
 % initialize the problem
-a = MOMProblem(k);
+a = CFIE_MOMProblem(k);
 
 % create the geometry
 a = a.makeCircle(geo_a, 100);
@@ -20,15 +20,15 @@ a = a.makeCircle(geo_a, 100);
 a = a.constructIncidence(0, 1);
 
 % assemble LHS
-a = a.tmz_eps_sys_matrix();
+a = a.tmz_eps_sys_matrix(9.0);
 
 % solve the method-of-moments system
 a = a.solveI();
 
 % construct the field
 step_num = 100;
-Xpoints = linspace(-2.5*geo_a, 2.5*geo_a, step_num);
-Ypoints = linspace(-2.5*geo_a, 2.5*geo_a, step_num);
+Xpoints = linspace(-5*geo_a, 5*geo_a, step_num);
+Ypoints = linspace(-5*geo_a, 5*geo_a, step_num);
 [Einc, Escat, Etot] = a.evaluateEPSFields(Xpoints, Ypoints, 1);
 
 % % plot the mesh
