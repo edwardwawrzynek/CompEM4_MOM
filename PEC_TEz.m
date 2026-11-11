@@ -3,10 +3,10 @@ clc; clear; close all;
 eps0 = 8.85 * 1e-12;
 mu0 = 4 * pi * 1e-7;
 c0 = 1 / sqrt(eps0 * mu0);
-f = 9 * 1e9;
+f = 10 * 1e9;
 lambda = c0/f;
 k = 2*pi/lambda;
-geo_a = 0.5 * lambda;
+geo_a = 1.5 * 1e-2;
 
 % initialize the problem
 a = MOMProblem(k);
@@ -26,9 +26,9 @@ a = a.tez_pec_sys_matrix();
 a = a.solveI();
 
 % construct the field
-step_size = 100;
-Xpoints = linspace(-2.5*geo_a, 2.5*geo_a, 100);
-Ypoints = linspace(-2.5*geo_a, 2.5*geo_a, 100);
+step_num = 100;
+Xpoints = linspace(-2.5*geo_a, 2.5*geo_a, step_num);
+Ypoints = linspace(-2.5*geo_a, 2.5*geo_a, step_num);
 [Hinc, Hscat, Htot] = a.evaluatePECFields(Xpoints, Ypoints, 2);
 
 % % plot the mesh
