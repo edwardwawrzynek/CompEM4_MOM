@@ -1,4 +1,4 @@
-clc; clear; close all;
+clc; clear; 
 
 eps0 = 8.85 * 1e-12;
 mu0 = 4 * pi * 1e-7;
@@ -7,6 +7,7 @@ f = 10 * 1e9;
 lambda = c0/f;
 k = 2*pi/lambda;
 geo_a = 1.5 * 1e-2;
+eps_r = 9;
 
 % initialize the problem
 a = CFIE_MOMProblem(k);
@@ -20,7 +21,7 @@ a = a.makeCircle(geo_a, 100);
 a = a.constructIncidence(0, 1);
 
 % assemble LHS
-a = a.tmz_eps_sys_matrix(9.0);
+a = a.tmz_eps_sys_matrix(eps_r);
 
 % solve the method-of-moments system
 a = a.solveI();
@@ -87,3 +88,28 @@ axis equal tight;
 title("Total Field [V/m]");
 xlabel("x [m]")
 ylabel("y [m]")
+
+%%
+%%%%%%%%%%%%%%%%%%
+%%% Echo Width %%%
+%%%%%%%%%%%%%%%%%%
+
+% sweep the angle
+angle = linspace(0, 2*pi, 360);
+
+[X, Y] = meshgrid(Xpoints, Ypoints);
+X = X(:); Y = Y(:);
+sigma_simulated  = simulated_echo_width(X, Y, k, Etot, 0.05, 360, 100);
+sigma_analytical = bistatic_echo_width_tm_eps(angle, k, geo_a, eps_r);
+
+% plot
+figure();
+plot(angle*180/pi, sigma_simulated, 'LineWidth', 2); hold on;
+plot(angle*180/pi, sigma_analytical, ":", 'LineWidth', 2);
+set(gca,'FontName', 'Times', 'FontSize', 18);
+set(gcf, 'Color', 'w')
+legend("Simulated", "Analytic");
+title("Bistatic Echowidth; TM_z PEC")
+xlabel("\phi [deg]");
+ylabel("\sigma(\phi)");
+grid on; box on;

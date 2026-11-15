@@ -7,6 +7,7 @@ f = 10 * 1e9;
 lambda = c0/f;
 k = 2*pi/lambda;
 geo_a = 1.5 * 1e-2;
+eps_r = 9;
 
 % initialize the problem
 a = CFIE_MOMProblem(k);
@@ -20,7 +21,7 @@ a = a.makeCircle(geo_a, 100);
 a = a.constructIncidence(0, 1);
 
 % assemble LHS
-a = a.tez_eps_sys_matrix(9.0);
+a = a.tez_eps_sys_matrix(eps_r);
 
 % solve the method-of-moments system
 a = a.solveI();
@@ -29,7 +30,7 @@ a = a.solveI();
 step_num = 100;
 Xpoints = linspace(-5*geo_a, 5*geo_a, step_num);
 Ypoints = linspace(-5*geo_a, 5*geo_a, step_num);
-[Einc, Escat, Etot] = a.evaluateEPSFields(Xpoints, Ypoints, 2);
+[Hinc, Hscat, Htot] = a.evaluateEPSFields(Xpoints, Ypoints, 2);
 
 % % plot the mesh
 % figure();
@@ -47,7 +48,7 @@ fig = figure('Color','White', 'Units','normalized', 'Position', [0.02 0.04 0.96 
 t = tiledlayout(fig, 1, 3, 'TileSpacing','compact', 'Padding','compact');
 
 nexttile; hold on;
-imagesc(Xpoints, Ypoints, real(Einc));
+imagesc(Xpoints, Ypoints, real(Hinc));
 theta = linspace(0, 2*pi, 100);
 plot(geo_a*cos(theta), geo_a*sin(theta), 'k', 'LineWidth', 1.5);
 set(gcf, 'Color', 'w');
@@ -61,7 +62,7 @@ xlabel("x [m]")
 ylabel("y [m]")
 
 nexttile; hold on;
-imagesc(Xpoints, Ypoints, real(Escat));
+imagesc(Xpoints, Ypoints, real(Hscat));
 theta = linspace(0, 2*pi, 100);
 plot(geo_a*cos(theta), geo_a*sin(theta), 'k', 'LineWidth', 1.5);
 set(gcf, 'Color', 'w');
@@ -75,7 +76,7 @@ xlabel("x [m]")
 ylabel("y [m]")
 
 nexttile; hold on;
-imagesc(Xpoints, Ypoints, real(Etot));
+imagesc(Xpoints, Ypoints, real(Htot));
 theta = linspace(0, 2*pi, 100);
 plot(geo_a*cos(theta), geo_a*sin(theta), 'k', 'LineWidth', 1.5);
 set(gcf, 'Color', 'w');
@@ -87,3 +88,28 @@ axis equal tight;
 title("Total Field [V/m]");
 xlabel("x [m]")
 ylabel("y [m]")
+
+%%
+%%%%%%%%%%%%%%%%%%
+%%% Echo Width %%%
+%%%%%%%%%%%%%%%%%%
+
+% sweep the angle
+angle = linspace(0, 2*pi, 360);
+
+[X, Y] = meshgrid(Xpoints, Ypoints);
+X = X(:); Y = Y(:);
+sigma_simulated  = simulated_echo_width(X, Y, k, Htot, 0.05, 360, 50);
+sigma_analytical = bistatic_echo_width_te_eps(angle, k, geo_a, eps_r);
+
+% plot
+figure();
+plot(angle*180/pi, sigma_simulated, 'LineWidth', 2); hold on;
+plot(angle*180/pi, sigma_analytical, ":", 'LineWidth', 2);
+set(gca,'FontName', 'Times', 'FontSize', 18);
+set(gcf, 'Color', 'w')
+legend("Simulated", "Analytic");
+title("Bistatic Echowidth; TE_z Dielectric")
+xlabel("\phi [deg]");
+ylabel("\sigma(\phi)");
+grid on; box on;

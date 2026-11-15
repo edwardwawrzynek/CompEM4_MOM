@@ -215,6 +215,9 @@ classdef CFIE_MOMProblem
         % Fscat     the scattered field at points (X,Y)
         % Ftot      the total field at points (X,Y)
 
+            % impedance of free space
+            eta = 376.730;
+
             % pol = 1 corresponds to TMz
             % pol = 2 corresponds to TEz
             if pol ~= 1 && pol ~= 2

@@ -87,3 +87,28 @@ axis equal tight;
 title("Total Field [A/m]");
 xlabel("x [m]")
 ylabel("y [m]")
+
+%%
+%%%%%%%%%%%%%%%%%%
+%%% Echo Width %%%
+%%%%%%%%%%%%%%%%%%
+
+% sweep the angle
+angle = linspace(0, 2*pi, 360);
+
+[X, Y] = meshgrid(Xpoints, Ypoints);
+X = X(:); Y = Y(:);
+sigma_simulated  = simulated_echo_width(X, Y, k, Htot, 0.05, 360, 50);
+sigma_analytical = bistatic_echo_width_te_pec(angle, k, geo_a);
+
+% plot
+figure();
+plot(angle*180/pi, sigma_simulated, 'LineWidth', 2); hold on;
+plot(angle*180/pi, sigma_analytical, ":", 'LineWidth', 2);
+set(gca,'FontName', 'Times', 'FontSize', 18);
+set(gcf, 'Color', 'w')
+legend("Simulated", "Analytic");
+title("Bistatic Echowidth; TE_z PEC")
+xlabel("\phi [deg]");
+ylabel("\sigma(\phi)");
+grid on; box on;
