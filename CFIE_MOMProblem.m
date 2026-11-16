@@ -95,14 +95,14 @@ classdef CFIE_MOMProblem
                         obj.Z(m,n+Nbasis) = k0 * eta * Ln / 4 * (1 - 2j/pi * log(k0 * gamma * Ln / 4 / e));
                         % INTERNAL interactions (10.2.57)
                         obj.Z(m+Nbasis,n) = 1/2;
-                        obj.Z(m+Nbasis,n+Nbasis) = -mu_r * ki * eta * Ln / 4 * (1 - 2j/pi * log(ki * gamma * Ln / 4 / e));
+                        obj.Z(m+Nbasis,n+Nbasis) = -mu_r * k0 * eta * Ln / 4 * (1 - 2j/pi * log(ki * gamma * Ln / 4 / e));
                     else
                         % EXTERNAL interactions (10.2.56)
                         obj.Z(m,n) = -k0 * Ln / 4j * besselh(1,2,k0*norm(rho_m-rho_n)) * dot(nn, rho_m-rho_n) / norm(rho_m-rho_n); 
                         obj.Z(m,n+Nbasis) = k0 * eta * Ln / 4 * besselh(0, 2, k0*norm(rho_m - rho_n));
                         % INTERNAL interactions (10.2.57)
                         obj.Z(m+Nbasis,n) = ki * Ln / 4j * besselh(1,2,ki*norm(rho_m-rho_n)) * dot(nn, rho_m-rho_n) / norm(rho_m-rho_n);
-                        obj.Z(m+Nbasis,n+Nbasis) = -mu_r * ki * eta * Ln / 4 * besselh(0, 2, ki*norm(rho_m - rho_n));
+                        obj.Z(m+Nbasis,n+Nbasis) = -mu_r * k0 * eta * Ln / 4 * besselh(0, 2, ki*norm(rho_m - rho_n));
                     end
                 end
             end
@@ -143,14 +143,14 @@ classdef CFIE_MOMProblem
                         obj.Z(m,n+Nbasis) = -k0 * Y0 * Ln / 4 * (1 - 2j/pi * log(k0 * gamma * Ln / 4 / e));
                         % INTERNAL interactions (10.2.57)
                         obj.Z(m+Nbasis,n) = 1/2;
-                        obj.Z(m+Nbasis,n+Nbasis) = eps_r * ki * Y0 * Ln / 4 * (1 - 2j/pi * log(ki * gamma * Ln / 4 / e));
+                        obj.Z(m+Nbasis,n+Nbasis) = eps_r * k0 * Y0 * Ln / 4 * (1 - 2j/pi * log(ki * gamma * Ln / 4 / e));
                     else
                         % EXTERNAL interactions (10.2.56)
                         obj.Z(m,n) = -k0 * Ln / 4j * besselh(1,2,k0*norm(rho_m-rho_n)) * dot(nn, rho_m-rho_n) / norm(rho_m-rho_n); 
                         obj.Z(m,n+Nbasis) = -k0 * Y0 * Ln / 4 * besselh(0, 2, k0*norm(rho_m - rho_n));
                         % INTERNAL interactions (10.2.57)
                         obj.Z(m+Nbasis,n) = ki * Ln / 4j * besselh(1,2,ki*norm(rho_m-rho_n)) * dot(nn, rho_m-rho_n) / norm(rho_m-rho_n);
-                        obj.Z(m+Nbasis,n+Nbasis) = eps_r * ki * Y0 * Ln / 4 * besselh(0, 2, ki*norm(rho_m - rho_n));
+                        obj.Z(m+Nbasis,n+Nbasis) = eps_r * k0 * Y0 * Ln / 4 * besselh(0, 2, ki*norm(rho_m - rho_n));
                     end
                 end
             end
@@ -256,7 +256,7 @@ classdef CFIE_MOMProblem
                                         obj.k0 * Ln / 4j * obj.I(n) * besselh(1, 2, obj.k0 * distance) * dot(nn, r) / distance;
                                 else
                                     Fscat(iy, ix) = Fscat(iy, ix) + ...
-                                        obj.ki * eta * Ln / 4 * obj.I(n+Nbasis) * besselh(0, 2, obj.ki * distance) - ...
+                                        obj.k0 * eta * Ln / 4 * obj.I(n+Nbasis) * besselh(0, 2, obj.ki * distance) - ...
                                         obj.ki * Ln / 4j * obj.I(n) * besselh(1, 2, obj.ki * distance) * dot(nn, r) / distance;
                                 end
                             else
@@ -268,7 +268,7 @@ classdef CFIE_MOMProblem
                                         obj.k0 * Ln / 4j * obj.I(n) * besselh(1, 2, obj.k0 * distance) * dot(nn, r) / distance;
                                 else
                                     Fscat(iy, ix) = Fscat(iy, ix) - ...
-                                        obj.ki * eps_r * Y0 * Ln / 4 * obj.I(n+Nbasis) * besselh(0, 2, obj.ki * distance) - ...
+                                        obj.k0 * eps_r * Y0 * Ln / 4 * obj.I(n+Nbasis) * besselh(0, 2, obj.ki * distance) - ...
                                         obj.ki * Ln / 4j * obj.I(n) * besselh(1, 2, obj.ki * distance) * dot(nn, r) / distance;
                                 end
                             end

@@ -1,4 +1,4 @@
-clc; clear; 
+clc; clear; close all;
 
 eps0 = 8.85 * 1e-12;
 mu0 = 4 * pi * 1e-7;
